@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.kwee.jonathan</groupId>
-    <artifactId>indeed_web_scraper</artifactId>
+    <artifactId>selenium-web-scraper</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
 
@@ -13,6 +13,8 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <selenium.version>3.141.59</selenium.version>
+        <maven.jar.plugin.version>3.2.0</maven.jar.plugin.version>
+        <maven.assembly.plugin.version>3.3.0</maven.assembly.plugin.version>
     </properties>
 
     <dependencies>
@@ -25,22 +27,28 @@
 
     <build>
         <plugins>
+            <!-- Plugin used to compile MANIFEST.MF file into jar. Required to specify entry point when running a jar file -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>3.2.0</version>
+                <version>${maven.jar.plugin.version}</version>
                 <configuration>
                     <archive>
                         <manifestFile>src/main/resources/META-INF/MANIFEST.MF</manifestFile>
                     </archive>
                 </configuration>
             </plugin>
+
+            <!-- Plugin used to compile jar with dependencies. Required to run application with selenium jar dependency -->
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
+                <version>${maven.assembly.plugin.version}</version>
                 <configuration>
+                    <appendAssemblyId>false</appendAssemblyId>
+                    <finalName>selenium-web-scraper</finalName>
                     <archive>
                         <manifest>
-                            <mainClass>com.kwee.jonathan.IndeedScraperApplication</mainClass>
+                            <mainClass>com.kwee.jonathan.WebScraperApplication</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>

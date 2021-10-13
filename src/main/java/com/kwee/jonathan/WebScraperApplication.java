@@ -6,7 +6,7 @@ import org.openqa.selenium.firefox.FirefoxDriver;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 
-public class IndeedScraperApplication {
+public class WebScraperApplication {
 
     private static final String GECKO_DRIVER_PATH = "src/main/resources/geckodriver";
     private static final String DRIVER_SYS_PROPERTY_NAME = "webdriver.gecko.driver";
