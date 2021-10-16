@@ -4,7 +4,8 @@ public enum CommandLineOptions {
 
     SITE("site", "s"),
     QUERY("query", "q"),
-    LOCATION("location", "l");
+    LOCATION("location", "l"),
+    DATE_POSTED("date", "d");
 
     private String longTxt;
     private String shortTxt;

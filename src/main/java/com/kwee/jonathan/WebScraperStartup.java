@@ -3,9 +3,11 @@ package com.kwee.jonathan;
 import static com.kwee.jonathan.constants.CommandLineOptions.SITE;
 import static com.kwee.jonathan.constants.CommandLineOptions.QUERY;
 import static com.kwee.jonathan.constants.CommandLineOptions.LOCATION;
+import static com.kwee.jonathan.constants.CommandLineOptions.DATE_POSTED;
 
 import com.kwee.jonathan.constants.CommandLineOptions;
 import com.kwee.jonathan.indeed.IndeedWebScraper;
+import com.kwee.jonathan.indeed.filters.DatePosted;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Lazy;
@@ -13,6 +15,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
 import java.util.List;
+import java.util.Optional;
 
 @Component
 public class WebScraperStartup implements ApplicationRunner {
@@ -35,16 +38,15 @@ public class WebScraperStartup implements ApplicationRunner {
         List<String> sites = extractValuesFromArgs(args, SITE);
         List<String> queries = extractValuesFromArgs(args, QUERY);
         List<String> locations = extractValuesFromArgs(args, LOCATION);
+        List<String> dates = extractValuesFromArgs(args, DATE_POSTED);
 
         String query = queries.get(0);
         String location = locations.get(0);
-
-        System.out.printf("Scraping with query: %s and location: %s.%n", query, location);
-
+        String date = CollectionUtils.isEmpty(dates) ? null : dates.get(0);
 
         sites.forEach(s -> {
             if (INDEED_SITE_VALUE.equalsIgnoreCase(s)) {
-                indeedWebScraper.scrapeSite(query, location);
+                indeedWebScraper.scrapeSite(query, location, DatePosted.convertInputToEnum(date));
             }
         });
     }

@@ -1,16 +1,23 @@
 package com.kwee.jonathan.indeed;
 
+import com.kwee.jonathan.indeed.filters.DatePosted;
 import com.kwee.jonathan.interfaces.Scraper;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.interactions.Actions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
+import java.time.Duration;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 @Lazy
 @Service
@@ -19,38 +26,61 @@ public class IndeedWebScraper implements Scraper {
     private final String GECKO_DRIVER_PATH = "src/main/resources/geckodriver";
     private final String DRIVER_SYS_PROPERTY_NAME = "webdriver.gecko.driver";
 
-    private final String ENTRY_URL = "https://www.indeed.com";
-    private final String WHAT_SEARCHBOX_ID = "text-input-what";
-    private final String WHERE_SEARCHBOX_ID = "text-input-where";
-    private final String FINDJOBS_BTN_CLASS = "icl-Button";
+    private final String ENTRY_URL = "https://www.indeed.com/jobs?q=%s&l=%s";
+    private final String TAP_ITEM_CLASS = "tapItem";
+    private final String IFRAME_ID = "vjs-container-iframe";
+    private final String JOB_TITLE_CLASS = "jobsearch-JobInfoHeader-title";
+
+    // Pop up
+    private final String POP_UP_CLOSE_CLASS = "popover-x-button-close";
 
     // Filters classes/ids
-    private final String FILTER_DATEPOSTED = "filter-dateposted";
+    private final String FITLER_CLASS = "yosegi-FilterPill-dropdownListItemLink";
+    private final String FILTER_DATEPOSTED_ID = "filter-dateposted";
 
     private WebDriver firefoxDriver;
 
     @Override
-    public void scrapeSite(String query, String location) {
-        search(query, location);
+    public void scrapeSite(String query, String location, DatePosted datePosted) {
+        search(query, location, datePosted);
     }
 
-    private void search(String position, String location) {
-        firefoxDriver.get(ENTRY_URL);
-        WebElement whatSearchBox = firefoxDriver.findElement(By.id(WHAT_SEARCHBOX_ID));
-        whatSearchBox.sendKeys(position);
+    private void search(String position, String location, DatePosted datePosted) {
+        firefoxDriver.get(
+                String.format(ENTRY_URL, position, location)
+        );
 
-        WebElement whereSearchBox = firefoxDriver.findElement(By.id(WHERE_SEARCHBOX_ID));
-        whereSearchBox.clear();
-        whereSearchBox.sendKeys(location);
+        List<WebElement> filterOptions = firefoxDriver.findElements(By.className(FITLER_CLASS));
+        // select date posted filters
+        firefoxDriver.findElement(By.id(FILTER_DATEPOSTED_ID)).click();
+        filterOptions.stream()
+                .filter(e -> datePosted.getText().equalsIgnoreCase(e.getText()))
+                .findFirst()
+                .ifPresent(WebElement::click);
 
-        WebElement findJobButton = firefoxDriver.findElement(By.className(FINDJOBS_BTN_CLASS));
-        findJobButton.click();
+        // Handle potential pop up
+        try {
+            Thread.sleep(2000);
+            firefoxDriver.findElement(By.className(POP_UP_CLOSE_CLASS)).click();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        List<WebElement> jobCards = firefoxDriver.findElements(By.className(TAP_ITEM_CLASS));
+        for (WebElement card : jobCards) {
+            card.click();
+            WebElement jobInfoElement = findElementInIFrame(JOB_TITLE_CLASS,
+                    identifier -> firefoxDriver.findElement(By.className(identifier)));
+        }
     }
 
-    private void filterResults() {
-        firefoxDriver.findElement(By.id(FILTER_DATEPOSTED))
-            .click();
 
+    private <T, R> R findElementInIFrame(T elementIdentifier, Function<T, R> executableFunction) {
+        firefoxDriver.switchTo()
+                .frame(firefoxDriver.findElement(By.id(IFRAME_ID)));
+        R result = executableFunction.apply(elementIdentifier);
+        firefoxDriver.switchTo().defaultContent();
+        return result;
     }
 
     @PostConstruct
@@ -59,6 +89,9 @@ public class IndeedWebScraper implements Scraper {
         System.setProperty(DRIVER_SYS_PROPERTY_NAME, path.toString());
 
         firefoxDriver = new FirefoxDriver();
+        firefoxDriver.manage()
+                .timeouts()
+                .implicitlyWait(5, TimeUnit.SECONDS);
     }
 
 
